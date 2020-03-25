@@ -1,0 +1,18 @@
+curl -LO https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/amd64/kubectl
+chmod +x ./kubectl
+sudo mv ./kubectl /usr/local/bin/kubectl
+curl -Lo minikube https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64   && chmod +x minikube
+wget https://github.com/kubernetes/minikube/releases/download/v1.7.3/minikube_1.7.3-0_amd64.deb
+dpkg -i minikube_1.7.3-0_amd64.deb
+sudo minikube start --vm-driver=none
+sudo minikube dashboard
+sudo kubectl create deployment hello-minikube --image=k8s.gcr.io/echoserver:1.10
+sudo kubectl expose deployment hello-minikube --type=NodePort --port=8080
+sudo kubectl get pod
+sudo minikube service hello-minikube --url
+sudo kubectl delete services hello-minikube
+sudo kubectl delete deployment hello-minikube
+sudo minikube stop
+sudo minikube delete
+ej:
+kubectl run demo-backend --image=demo-backend:latest   --port=8080 --image-pull-policy Never

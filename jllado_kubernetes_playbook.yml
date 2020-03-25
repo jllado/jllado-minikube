@@ -1,0 +1,87 @@
+---
+- hosts: jllado-server, default
+  remote_user: jllado
+  become: true
+  tasks:
+  - name: docker setup
+    tags:
+      - docker
+    block:
+      - name: register docker setup
+        command: dpkg-query -W docker-ce
+        ignore_errors: yes
+        register: docker
+      - name: install docker tools
+        command: apt-get -y install apt-transport-https ca-certificates software-properties-common
+        when: docker.stderr.find('no packages found') != -1
+      - name: docker certificate
+        shell: curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
+        when: docker.stderr.find('no packages found') != -1
+      - name: docker certificate
+        command: apt-key fingerprint 0EBFCD88
+        when: docker.stderr.find('no packages found') != -1
+      - name: docker certificate
+        command: apt-key fingerprint 0EBFCD88
+        when: docker.stderr.find('no packages found') != -1
+      - name: docker repository
+        shell: add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+        when: docker.stderr.find('no packages found') != -1
+      - name: install docker
+        apt:
+            name: docker-ce
+            update_cache: yes
+        when: docker.stderr.find('no packages found') != -1
+      - name: create docker group
+        group:
+            name: docker
+            state: present
+        when: docker.stderr.find('no packages found') != -1
+      - name: add user to docker group
+        command: usermod -aG docker jllado
+        when: docker.stderr.find('no packages found') != -1
+      - name: register docker-compose
+        stat: path=/usr/local/bin/docker-compose
+        register: docker_compose
+      - name: download docker-compose
+        shell: curl -L "https://github.com/docker/compose/releases/download/1.23.1/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+        when: docker_compose.stat.exists == False
+      - name: permissions docker-compose
+        shell: chmod +x /usr/local/bin/docker-compose
+        when: docker_compose.stat.exists == False
+      - name: check docker compose
+        shell: docker-compose --version
+  - name: install kubectl
+    tags: kubectl
+    block:
+      - name: register kubectl
+        stat: path=/usr/local/bin/kubectl
+        register: kubectl_bin
+      - name: download kubectl
+        shell: curl -LO https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/amd64/kubectl
+        when: kubectl_bin.stat.exists == False
+      - name: move kubectl to /usr/local/bin/
+        command: mv kubectl /usr/local/bin/
+        when: kubectl_bin.stat.exists == False
+      - name: permissions kubectl
+        shell: chmod a+x /usr/local/bin/kubectl
+        when: kubectl_bin.stat.exists == False
+  - name: install minikube
+    tags: minikube
+    block:
+      - name: register minikube
+        stat: path=/usr/local/bin/minikube
+        register: minikube_bin
+      - name: download minikube
+        shell: curl -Lo minikube https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
+        when: minikube_bin.stat.exists == False
+      - name: move minikube to /usr/local/bin/
+        command: mv minikube /usr/local/bin/
+        when: minikube_bin.stat.exists == False
+      - name: permissions minikube
+        shell: chmod a+x /usr/local/bin/minikube
+        when: minikube_bin.stat.exists == False
+      - name: run minikube
+        shell: minikube start --vm-driver=none
+      - name: run minikube dashboard
+        shell: minikube dashboard --url &
+
