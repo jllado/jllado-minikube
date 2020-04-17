@@ -1,9 +1,9 @@
 ---
-- hosts: jllado-server, default
+- hosts: jllado-server, localhost, default
   remote_user: jllado
-  become: true
   tasks:
   - name: docker setup
+    become: true
     tags:
       - docker
     block:
@@ -52,6 +52,7 @@
         shell: docker-compose --version
   - name: install kubectl
     tags: kubectl
+    become: true
     block:
       - name: register kubectl
         stat: path=/usr/local/bin/kubectl
@@ -67,21 +68,22 @@
         when: kubectl_bin.stat.exists == False
   - name: install minikube
     tags: minikube
+    become: true
     block:
+      - name: install conntrack
+        apt: 
+          name: conntrack
       - name: register minikube
         stat: path=/usr/local/bin/minikube
         register: minikube_bin
       - name: download minikube
-        shell: curl -Lo minikube https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
+        command: curl -Lo minikube https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
         when: minikube_bin.stat.exists == False
       - name: move minikube to /usr/local/bin/
         command: mv minikube /usr/local/bin/
         when: minikube_bin.stat.exists == False
       - name: permissions minikube
-        shell: chmod a+x /usr/local/bin/minikube
+        command: chmod a+x /usr/local/bin/minikube
         when: minikube_bin.stat.exists == False
       - name: run minikube
-        shell: minikube start --vm-driver=none
-      - name: run minikube dashboard
-        shell: minikube dashboard --url &
-
+        command: minikube start --vm-driver=none 
