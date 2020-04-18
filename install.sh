@@ -16,3 +16,4 @@ if [ ! -f "/usr/local/bin/minikube" ]; then
     sudo mv ./minikube /usr/local/bin/minikube
 fi
 sudo minikube start --vm-driver=none --apiserver-ips 127.0.0.1 --apiserver-name localhost --apiserver-port 51928
+sudo chown -R $USER $HOME/.kube $HOME/.minikube
